@@ -8,7 +8,7 @@
     "postprocessor",
     "solidcam"
   ],
-  "repository": "https://github.com/atom/language-gpptool",
+  "repository": "https://github.com/artur386/language-gpptool",
   "author": "Artur Paszek <artur.p386@gmail.com>",
   "license": "MIT",
   "engines": {
