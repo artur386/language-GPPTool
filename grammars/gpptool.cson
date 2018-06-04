@@ -1,0 +1,1264 @@
+# If this is your first time writing a language grammar, check out:
+# - https://gpptool.atom.io/hacking-atom/sections/creating-a-grammar/
+scopeName: 'source.gpptool'
+name: 'GPPTool'
+fileTypes: [
+  'gpp',
+  'dpp'
+]
+patterns: [
+  {
+    comment: 'all comments in document'
+    include: '#comments'
+  }
+  {
+    comment: ''
+    include: '#tool_path_commands'
+  }
+]
+
+repository:
+
+  conditional_statements:
+    patterns: [
+      {
+        begin: '(?i)(?<=^|\\s)\\b(if)\\b(.*)(?=\\;|\$)'
+        beginCaptures:
+          0: name: 'meta.if-head.gpptool'
+          1: name: 'keyword.control.gpptool'
+          2:
+            patterns: [
+              { include: '#loop_if_elseif_head_body'}
+            ]
+        end: '(?i)(?<=^|\\s)\\bendif\\b(?=\\;|\$)'
+        endCaptures:
+          0: name: 'keyword.control.gpptool'
+        name: 'meta.statement.control.gpptool'
+        patterns: [
+          {
+            name: 'meta.statement.elseif.gpptool'
+            match: '(?i)(?<=^|\\s)\\b(elseif)\\b(.*)(?=\\;|\$)'
+            captures:
+              0: name: 'meta.elseif-head.gpptool'
+              1: name: 'keyword.control.gpptool'
+              2:
+                patterns: [
+                  { include: '#loop_if_elseif_head_body'}
+                ]
+          }
+          {
+            match: '(?i)(?<=^|\\s)\\b(else)\\b\\s*(?=\\;|\$)'
+            captures:
+              1: name: 'keyword.control.gpptool'
+          }
+          { include: '#stop_execution_statements' }
+          { include: '#statement_loop' }
+          { include: '#content' }
+          { include: '#conditional_statements' }
+        ]
+      }
+    ]
+
+  commaSign:
+    patterns: [
+      { include: '#commaSign' }
+    ]
+
+  numbers:
+    patterns: [
+      {
+        match: '\\b(?<!\\$)0(x|X)[0-9a-fA-F]+\\b(?!\\$)'
+        name: 'constant.numeric.hex.gpptool'
+      }
+      {
+        match: '\\b(?<!\\$)0(b|B)[01]+\\b(?!\\$)'
+        name: 'constant.numeric.binary.gpptool'
+      }
+      {
+        match: '\\b(?<!\\$)0(o|O)?[0-7]+\\b(?!\\$)'
+        name: 'constant.numeric.octal.gpptool'
+      }
+      {
+        match: '''(?x)
+          (?<!\\$)(?:
+            (?:\\b[0-9]+(\\.)[0-9]+[eE][+-]?[0-9]+\\b)| # 1.1E+3
+            (?:\\b[0-9]+(\\.)[eE][+-]?[0-9]+\\b)|       # 1.E+3
+            (?:\\B(\\.)[0-9]+[eE][+-]?[0-9]+\\b)|       # .1E+3
+            (?:\\b[0-9]+[eE][+-]?[0-9]+\\b)|            # 1E+3
+            (?:\\b[0-9]+(\\.)[0-9]+\\b)|                # 1.1
+            (?:\\b[0-9]+(\\.)\\B)|                      # 1.
+            (?:\\B(\\.)[0-9]+\\b)|                      # .1
+            (?:\\b[0-9]+\\b(?!\\.))                     # 1
+          )(?!\\$)
+        '''
+        captures:
+          0: name: 'constant.numeric.decimal.gpptool'
+          1: name: 'meta.delimiter.decimal.period.gpptool'
+          2: name: 'meta.delimiter.decimal.period.gpptool'
+          3: name: 'meta.delimiter.decimal.period.gpptool'
+          4: name: 'meta.delimiter.decimal.period.gpptool'
+          5: name: 'meta.delimiter.decimal.period.gpptool'
+          6: name: 'meta.delimiter.decimal.period.gpptool'
+      }
+    ]
+
+  math_operators:
+    patterns: [
+      {
+        match: '\\*|\\/|\\-|\\+'
+        name: 'keyword.operator.gpptool'
+      }
+    ]
+
+  include_facility_design:
+    comment: 'Inc "abc"'
+    patterns: [
+      {
+        comment: '''
+                 Inc "external_file"
+        '''
+        match: '(?i)(?<=^|\\s)\\b(inc)\\b\\s+(\'|")(.*?)(\\2)\\s*(?=\\;|\$)'
+        captures:
+          1: name: 'support.function.gpptool'
+          2: name: 'punctuation.definition.function.name.begin.gpptool'
+          3: name: 'storage.type.object.gpptool'
+          4: name: 'punctuation.definition.function.name.end.gpptool'
+        name: 'meta.include-facility-design.gpptool'
+      }
+    ]
+
+  input:
+    patterns: [
+      {
+        name: 'meta.support.function.input.gpptool'
+        match: '(?i)(?<=^|\\s)\\b(input)\\b(.*?)(?=\\;|\$)'
+        captures:
+          1: name: 'support.function.gpptool'
+          2:
+            patterns: [
+              { include: '#strings' }
+              { include: '#math_operators' }
+              { include: '#array' }
+              { include: '#variables' }
+              { include: '#variable_usr' }
+              { include: '#commaSign' }
+            ]
+      }
+    ]
+
+  print:
+    patterns: [
+      {
+        name: 'meta.support.function.print.gpptool'
+        match: '(?i)(?<=^|\\s)\\b(print)\\b(.*?)(?=\\;|\$)'
+        captures:
+          1: name: 'support.function.gpptool'
+          2:
+            patterns: [
+              { include: '#strings' }
+              { include: '#math_operators' }
+              { include: '#gppl_internal_functions' }
+              { include: '#brackets' }
+              { include: '#array' }
+              { include: '#variables' }
+              { include: '#variable_usr' }
+            ]
+      }
+    ]
+
+  trace_statement:
+    comment: '''
+               trace "all": 0-5
+               trace "@proc":level
+    '''
+    patterns: [
+      {
+        name: 'meta.support.function.trace.gpptool'
+        match: '''(?ix)
+                        (?<=^|\\s)
+                        \\b(trace)\\b
+                        \\s*
+                        ('|\")(.*?)(\\2)
+                        \\s*
+                        (:)
+                        \\s*
+                        (?:
+                          \\b([a-zA-Z][a-zA-Z0-9_]*)\\b
+                          |
+                          \\b([0-5])\\b
+                          |
+                          \\b([6-9])\\b
+                        )
+        '''
+        captures:
+          1: name: 'support.function.gpptool'
+          2: name: 'punctuation.definition.string.begin.gpptool'
+          3:
+            patterns: [
+              {
+                match: '(?i)\\ball\\b'
+                name: 'entity.other.attribute-name.id.gpptool'
+              }
+              {
+                match: '''(?ix)
+                              (?:@
+                              \\b
+                              (absolute_mode|arc|arc_4x_polar|arc_4x_cartesian|arc_5x|call_prms|call_proc
+                              |change_ref_point|change_tool|chng_tool_cnext|compensation|def_tool|def_turn_tool
+                              |delay|drill|drill4x_cartesian|drill4x_pnt|drill4x_polar|drill_point|end_drill
+                              |end_loop|end_of_file|end_proc|end_program|feed_spin|fourth_axis|groove|home_data
+                              |home_number|init_post|line|line_4x|line4x_cartesian|line4x_dir|line4x_polar|line_5x|line_on
+                              |loop|machine_plane|message|mirror|move_4x|move4x_dir|move4x_polar|move4x_cartesian
+                              |move_5x|m_feed_spin|plane_data|proc|rapid_move|relative_mode|rotary_info|rotate
+                              |setup|spindles_sync|start_of_file|start_of_job|start_program|start_tool|stop_tool
+                              |thread|tmatrix|tool_path_info|turn_change_tool|turn_drill|turn_endproc|turning
+                              |turn_opt_parms|turn_proc|wc_abs_rel|wc_arc|wc_chng_condition|wc_chng_e_group
+                              |wc_cut_wire|wc_finish_info|wc_g49_arc|wc_insert_wire|wc_line|wc_move|wc_program_plane
+                              |vmid_info|rotate_to_plane|offset_change|end_of_job
+                              ))\\b
+                '''
+                name: 'entity.other.attribute-name.id.gpptool'
+              }
+              {
+                match: '\\@\\b(?:[a-zA-Z][a-zA-Z0-9_]*)\\b'
+                name: 'entity.other.attribute-name.id.gpptool'
+              }
+              { include: '#commaSign' }
+            ]
+          4: name: 'punctuation.definition.string.end.gpptool'
+          5: name: 'punctuation.definition.parameter.gpptool'
+          6:
+            patterns: [
+              { include: '#variable_usr' }
+            ]
+          7:
+            patterns: [
+              { include: '#numbers' }
+            ]
+          8: name: 'invalid.illegal.gpptool'
+      }
+    ]
+
+  array:
+    patterns: [
+      {
+        name: 'meta.array.gpptool'
+        begin: '''(?x)
+                    \\b
+                    ([a-zA-Z][a-zA-Z0-9_]*)
+                    \\b
+                    \\s*
+                    (<<)
+        '''
+        beginCaptures:
+          1: name: 'variable.interpolation.gpptool'
+          2: name: 'punctuation.definition.bold.array.begin.gpptool'
+        end: '>>'
+        endCaptures:
+          0: name: 'punctuation.definition.bold.array.end.gpptool'
+        patterns: [
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#variables' }
+          { include: '#variable_usr' }
+          { include: '#commaSign' }
+          { include: '#array' }
+        ]
+      }
+    ]
+
+  display_format:
+    patterns: [
+      {
+        name: 'meta.display-format.gpptool'
+        match: '''(?x)
+                    (?:<([^>]+)>)?                  # -1- <prefix>
+                    (\\x20|\\w)?                    # -3- <leading-zeroes>
+                    ([+-]+)?                        # -2- <sign>
+                    ((?:\\d{1,3}/)?\\d{1,3})        # -4- <integer>
+                    (\\.)                           # -5- .
+                    (\\d{1,3}(?:/\\d{1,3})?)        # -6- <fraction>
+                    ([ \\w])?                       # -7- <trailing-zeroes>
+                    ([()dDnNpPiI/*\\d\\.]+)?        # -8- <options>
+                    (?:<([^>]+)>)?                  # -9- <postfix>
+        '''
+        captures:
+          1:
+            patterns: [
+              {
+                match: '([^>]{32,})|([^>]{1,31})'
+                captures:
+                  1: name: 'invalid.illegal.gpptool'
+                  2: name: 'markup.raw.gpptool'
+              }
+            ]
+          2:
+            patterns: [
+              { include: '#math_operators' }
+            ]
+          3:
+            patterns: [
+              {
+                match: '([^z ])|([ z])'
+                captures:
+                  1: name: 'invalid.illegal.gpptool'
+                  2: name: 'markup.italic.gpptool'
+              }
+            ]
+          4:
+            patterns: [
+              { include: '#numbers' }
+              {
+                match: '/'
+                name: 'keyword.operator.gpptool'
+              }
+            ]
+            # name: 'constant.other.gpptool'
+          5: name: 'punctuation.gpptool'
+          6:
+            patterns: [
+              { include: '#numbers' }
+              {
+                match: '/'
+                name: 'keyword.operator.gpptool'
+              }
+            ]
+          7:
+            patterns: [
+              {
+                match: '([^z ])|([ z])'
+                captures:
+                  1: name: 'invalid.illegal.gpptool'
+                  2: name: 'markup.italic.gpptool'
+              }
+            ]
+            # name: 'markup.quote.gpptool'
+          8:
+            patterns: [
+              {
+                match: '(\\()?([dDnNpPiI/*\\d\\.]+)(\\))?'
+                captures:
+                  1: name: 'punctuation.definition.arguments.begin.bracket.display.gpptool'
+                  2:
+                    patterns: [
+                      {
+                        match: '''(?x)
+                                    (?:
+                                    ([/*]+)
+                                    |
+                                    ([\\.]+)
+                                    |
+                                    ([dDnNpPiI]+)
+                                    |
+                                    ([\\d]+)
+                                    )
+                        '''
+                        captures:
+                          1: name: 'keyword.operator.gpptool'
+                          2: name: 'punctuation.gpptool'
+                          3: name: 'markup.italic.gpptool'
+                          4: name: 'constant.numeric.gpptool'
+                      }
+                    ]
+                  3: name: 'punctuation.definition.arguments.end.bracket.display.gpptool'
+              }
+            ]
+          9:
+            patterns: [
+              {
+                match: '([^>]{32,})|([^>]{1,31})'
+                captures:
+                  1: name: 'invalid.illegal.gpptool'
+                  2: name: 'markup.raw.gpptool'
+              }
+            ]
+      }
+    ]
+
+
+  display_affix_format:
+    patterns: [
+      {
+        name: 'meta.display-format.string.gpptool'
+        match: '(:)(\'|")(.*?)(\\2)'
+        captures:
+          1: name: 'keyword.other.special-method.gpptool'
+          2: name: 'punctuation.definition.string.begin.gpptool'
+          3:
+            patterns: [
+              { include: '#display_format' }
+            ]
+          4: name: 'punctuation.definition.string.end.gpptool'
+      }
+      {
+        name: 'meta.display-format.variable.gpptool'
+        match: '(:)\\b([a-zA-Z][a-zA-Z0-9_]*_f)\\b'
+        captures:
+          1: name: 'keyword.other.special-method.gpptool'
+          2: name: 'entity.other.attribute-name.gpptool'
+      }
+      {
+        name: 'meta.display-format.declare.gpptool'
+        match: '(?<=^|\\s)\\b([a-zA-Z][a-zA-Z0-9_]*_f)\\b\\s*=\\s*(\'|")(.*)(\\2)\\s*(?=\\;|\$)'
+        captures:
+          1:
+            patterns: [
+              { include: '#variables' }
+              { include: '#variable_usr' }
+            ]
+          2: name: 'punctuation.definition.string.begin.gpptool'
+          3:
+            patterns: [
+              { include: '#display_format' }
+            ]
+          4: name: 'punctuation.definition.string.end.gpptool'
+      }
+    ]
+
+
+  tool_path_commands:
+    patterns: [
+      {
+        comment: '''
+                 # comment body
+        '''
+        name: 'meta.support.procedure.$2.gpptool'
+        begin: '''(?ix)
+                  (?<=^|\\s)
+                  (@
+                  \\b
+                  (absolute_mode|arc|arc_4x_polar|arc_4x_cartesian|arc_5x|call_prms|call_proc
+                  |change_ref_point|change_tool|chng_tool_cnext|compensation|def_tool|def_turn_tool
+                  |delay|drill|drill4x_cartesian|drill4x_pnt|drill4x_polar|drill_point|end_drill
+                  |end_loop|end_of_file|end_proc|end_program|feed_spin|fourth_axis|groove|home_data
+                  |home_number|init_post|line|line_4x|line4x_cartesian|line4x_dir|line4x_polar|line_5x|line_on
+                  |loop|machine_plane|message|mirror|move_4x|move4x_dir|move4x_polar|move4x_cartesian
+                  |move_5x|m_feed_spin|plane_data|proc|rapid_move|relative_mode|rotary_info|rotate
+                  |setup|spindles_sync|start_of_file|start_of_job|start_program|start_tool|stop_tool
+                  |thread|tmatrix|tool_path_info|turn_change_tool|turn_drill|turn_endproc|turning
+                  |turn_opt_parms|turn_proc|wc_abs_rel|wc_arc|wc_chng_condition|wc_chng_e_group
+                  |wc_cut_wire|wc_finish_info|wc_g49_arc|wc_insert_wire|wc_line|wc_move|wc_program_plane
+                  |vmid_info|rotate_to_plane|offset_change|end_of_job
+                  ))\\b
+                  \\s*
+                  (\\(.*\\))?
+                  \\s*
+                  (?=\\;|\$)
+        '''
+        beginCaptures:
+          1: name: 'support.function.any-method.gpptool'
+          3: name: 'invalid.illegal.gpptool'
+        end: '(?im)(?<=^|\\s)\\b(endp)\\b\\s*(?=\\;|\$)'
+        endCaptures:
+          1: name: 'support.function.any-method.gpptool'
+        patterns: [
+          # { include: '#comments' }
+          { include: '#conditional_statements' }
+          { include: '#statement_loop' }
+          { include: '#content' }
+        ]
+      }
+      {
+        name: 'meta.user.procedure.$2.gpptool'
+        begin: '''(?x)
+                  (@\\b([a-zA-Z][a-zA-Z0-9_]*)\\b)
+                  (.*)
+                  (?=\\;|\$)
+        '''
+        beginCaptures:
+          1: name: 'entity.name.function.gpptool'
+          3:
+            patterns: [
+              {
+                begin: '\\('
+                beginCaptures:
+                  0: name: 'punctuation.definition.begin.bracket.gpptool'
+                end: '\\)'
+                endCaptures:
+                  0: name: 'punctuation.definition.end.bracket.gpptool'
+                patterns: [
+                  {
+                    match: '(?i)(integer|numeric|logical|string)'
+                    name: 'support.type.gpptool'
+                  }
+                  { include: '#brackets' }
+                  { include: '#numbers' }
+                  { include: '#variables' }
+                  { include: '#variable_usr' }
+                  { include: '#commaSign' }
+                ]
+              }
+            ]
+        end: '(?im)(?<=^|\\s)\\b(endp)\\b\\s*(?=\\;|\$)'
+        endCaptures:
+          1: name: 'entity.name.function.gpptool'
+        patterns: [
+          { include: '#comments' }
+          { include: '#conditional_statements' }
+          { include: '#statement_loop' }
+          { include: '#content' }
+        ]
+      }
+    ]
+
+  invalid_into_procedure:
+    patterns: [
+      {
+        match: '(?i)(?<=^|\\s)\\binc\\b.*?(?=\\;|\$)'
+        name: 'invalid.illegal.include.gpptool'
+      }
+    ]
+
+  content:
+    patterns: [
+      # { include: '#conditional_statements' }
+      # { include: '#statement_loop' }
+      { include: '#strings' }
+      { include: '#comments' }
+      { include: '#invalid_into_procedure' }
+      { include: '#stop_execution_statements' }
+      { include: '#display_affix_format' }
+      { include: '#input' }
+      { include: '#print' }
+      { include: '#trace_statement' }
+      { include: '#gppl_internal_functions' }
+      { include: '#function_call' }
+      { include: '#print_gcode' }
+      { include: '#numbers' }
+      { include: '#variable_usr_assignment' }
+      { include: '#variables' }
+    ]
+
+
+  invalid_call_argument:
+    patterns: [
+      {
+        comment: '''
+                 call @user_line(x+7)  -  Invalid: the expression is not in parentheses
+        '''
+        match: '''(?ix)
+                  (?<=^|\\,)
+                  \\s*(?<!\\()
+                  \\s*
+                      (
+                        (?: [0-9]+ | [a-z][a-z0-9_]* )
+                         \\s*
+                         [-+*/]
+                         \\s*
+                        (?: [0-9]+ | [a-z][a-z0-9_]* )
+                      )
+                  \\s*(?!\\))
+                  \\s*
+                  (?=\\,|\$)
+        '''
+        captures:
+          1: name: 'invalid.illegal.arguments.gpptool'
+      }
+    ]
+
+
+  function_call:
+    comment: '''
+               call @Function                         ;valid
+               call @usrFunction(var1, var2)          ;valid
+               call @usrFunction((var1+10), var2)     ;valid
+               call @usrFunction(var1+10, var2)       ;invalid
+    '''
+    patterns: [
+      {
+        name: 'meta.call.procedure.gpptool'
+        match: '(?im)(?<=^|\\s)(call)\\s*(\\@\\b[a-z][a-z0-9_]*\\b)(.*)(?=\\;|\$)'
+        captures:
+          1: name: 'support.function.gpptool'
+          2: name: 'entity.name.function.gpptool'
+          3:
+            patterns: [
+              {
+                name: 'meta.call.body.gpptool'
+                comment: '''
+                         match arguments
+                '''
+                match: '(?:(\\()(.*?)(\\)))'
+                captures:
+                  1: name: 'punctuation.definition.call.function.begin.bracket.gpptool'
+                  2:
+                    patterns: [
+                      { include: '#invalid_call_argument' }
+                      { include: '#commaSign' }
+                      { include: '#brackets' }
+                      { include: '#numbers' }
+                      { include: '#variables' }
+                      { include: '#variable_usr' }
+                    ]
+                  3: name: 'punctuation.definition.call.function.end.bracket.gpptool'
+              }
+            ]
+      }
+    ]
+
+  gppl_internal_functions:
+    patterns: [
+      { include: '#numeric_functions' }
+      { include: '#string_functions' }
+      { include: '#logical_functions' }
+    ]
+
+  numeric_functions:
+    patterns: [
+      {
+        comment: 'foo(xxx)'
+        begin: '(?i)\\b(cos|sin|tan|todeg|torad|abs|acos|asin|atan|exp|frac|int|log|log10|norm360|sign|sqrt|square)\\b\\s*(\\()'
+        beginCaptures:
+          1: name: 'support.function.numeric.gpptool'
+          2: name: 'punctuation.definition.function.begin.bracket.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.function.end.bracket.gpptool'
+        patterns: [
+          { include: '#display_affix_format' }
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#strings' }
+          { include: '#array' }
+          { include: '#variables' }
+          { include: '#commaSign' }
+          { include: '#gppl_internal_functions' }
+          { include: '#variable_usr' }
+        ]
+      }
+      {
+        comment: 'foo(array)'
+        begin: '(?i)\\b(adims|asize)\\b\\s*(\\()'
+        beginCaptures:
+          1: name: 'support.function.numeric.gpptool'
+          2: name: 'punctuation.definition.function.begin.bracket.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.function.end.bracket.gpptool'
+        patterns: [
+          { include: '#display_affix_format' }
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#strings' }
+          { include: '#array' }
+          { include: '#variables' }
+          { include: '#commaSign' }
+          { include: '#gppl_internal_functions' }
+          { include: '#variable_usr' }
+        ]
+      }
+      {
+        comment: 'foo(xxx, yyy)'
+        begin: '(?i)\\b(alen|ang|atan2|dist|mod|pow|round2val|round)\\b\\s*(\\()'
+        beginCaptures:
+          1: name: 'support.function.numeric.gpptool'
+          2: name: 'punctuation.definition.function.begin.bracket.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.function.end.bracket.gpptool'
+        patterns: [
+          { include: '#display_affix_format' }
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#strings' }
+          { include: '#array' }
+          { include: '#variables' }
+          { include: '#commaSign' }
+          { include: '#gppl_internal_functions' }
+          { include: '#variable_usr' }
+        ]
+      }
+    ]
+
+  string_functions:
+    patterns: [
+      {
+        match: '\\b(?:date|time)\\b'
+        name: 'support.function.string.gpptool'
+      }
+      {
+        begin: '\\b(tostr)\\b\\s*(\\()'
+        beginCaptures:
+          1: name: 'support.function.string.gpptool'
+          2: name: 'punctuation.definition.function.begin.bracket.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.function.end.bracket.gpptool'
+        patterns: [
+          { include: '#display_affix_format' }
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#strings' }
+          { include: '#array' }
+          { include: '#variables' }
+          { include: '#commaSign' }
+          { include: '#gppl_internal_functions' }
+          { include: '#variable_usr' }
+        ]
+      }
+      {
+        comment: 'foo(a, b)'
+        begin: '\\b(dup|instr|left|lower|replace|rev|right|space|strlen|substr|tonum|trim|upper)\\b\\s*(\\()'
+        beginCaptures:
+          1: name: 'support.function.string.gpptool'
+          2: name: 'punctuation.definition.function.begin.bracket.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.function.end.bracket.gpptool'
+        patterns: [
+          { include: '#display_affix_format' }
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#strings' }
+          { include: '#array' }
+          { include: '#variables' }
+          { include: '#commaSign' }
+          { include: '#gppl_internal_functions' }
+          { include: '#variable_usr' }
+        ]
+      }
+    ]
+
+  logical_functions:
+    patterns: [
+      {
+        comment: 'foo(a)'
+        begin: '\\b(active|change|even|odd)\\b\\s*(\\()'
+        beginCaptures:
+          1: name: 'support.function.logical.gpptool'
+          2: name: 'punctuation.definition.function.begin.bracket.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.function.end.bracket.gpptool'
+        patterns: [
+          { include: '#display_affix_format' }
+          { include: '#brackets' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#strings' }
+          { include: '#array' }
+          { include: '#variables' }
+          { include: '#commaSign' }
+          { include: '#gppl_internal_functions' }
+          { include: '#variable_usr' }
+        ]
+      }
+    ]
+
+  comments:
+    patterns: [
+      {
+        begin: '(^[ \\t]+)?(?=\\;)'
+        beginCaptures:
+          1: name: 'punctuation.whitespace.comment.leading.gpptool'
+        end: '(?!\\G)'
+        patterns: [
+          {
+            begin: '\\;'
+            beginCaptures:
+              0: name: 'punctuation.definition.comment.gpptool'
+            end: '\\n'
+            name: 'comment.line.sign-line.gpptool'
+          }
+        ]
+      }
+    ]
+
+  strings:
+    patterns: [
+      {
+        begin: '\''
+        beginCaptures:
+          0: name: 'string.quote.single.gpptool'
+        end: '\''
+        endCaptures:
+          0: name: 'string.quote.single.gpptool'
+        contentName: 'string.quote.single.gpptool'
+        patterns: [
+          { include: '#escape_character' }
+          { include: '#file_commands' }
+        ]
+      }
+      {
+        begin: '\"'
+        beginCaptures:
+          0: name: 'string.quote.double.gpptool'
+        end: '\"'
+        endCaptures:
+          0: name: 'string.quote.double.gpptool'
+        contentName: 'string.quote.double.gpptool'
+        patterns: [
+          { include: '#escape_character' }
+          { include: '#file_commands' }
+        ]
+      }
+    ]
+
+#===========================
+
+  statement_loop:
+    patterns: [
+      {
+        name: 'meta.statement.loop.gpptool'
+        begin: '(?i)(?<=^|\\s)\\b(while)\\b(.*)(?=\\;|\$)'
+        beginCaptures:
+          1: name: 'keyword.control.while.gpptool'
+          2:
+            patterns: [
+              { include: '#loop_if_elseif_head_body' }
+            ]
+        end: '(?i)(?<=^|\\s)\\bendw\\b\\s*(?=\\;|\$)'
+        endCaptures:
+          0: name: 'keyword.control.endw.gpptool'
+        patterns: [
+          { include: '#conditional_statements' }
+          { include: '#content' }
+          { include: '#statement_loop' }
+        ]
+      }
+    ]
+
+  basic_logical_operators:
+    patterns: [
+      {
+        match: '(?i)((?:\\b(?:not|and|or)\\b)|\!)'
+        captures:
+          1: name: 'keyword.control.gpptool'
+        # name: 'meta.basic-logical-operators.gpptool'
+      }
+    ]
+
+  standard_relational_operators:
+    patterns: [
+      {
+        match: '''(?ix)
+                    (
+                      (?:>=|<=|<>|==|>|<)
+                      |
+                      (?:\\b(?:gt|ge|lt|le|eq|ne)\\b)
+                    )
+        '''
+        captures:
+          1: name: 'keyword.control.gpptool'
+      }
+    ]
+
+  loop_if_elseif_head_body:
+    patterns: [
+      {
+        match: '(?i)\\bthen\\b'
+        captures:
+          0: name: 'keyword.control.gpptool'
+      }
+      { include: '#array' }
+      { include: '#gppl_internal_functions' }
+      { include: '#basic_logical_operators' }
+      { include: '#standard_relational_operators' }
+      { include: '#brackets' }
+      { include: '#strings' }
+      { include: '#numbers' }
+      { include: '#variables' }
+      { include: '#variable_usr' }
+    ]
+
+
+
+
+  stop_execution_statements:
+    patterns: [
+      {
+        comment: 'keywords that alter flow from within a block'
+        match: '(?i)\\b(?:abort|exit|break|return)\\b'
+        captures:
+          1: name: 'keyword.control.statement.gpptool'
+      }
+    ]
+
+  file_commands:
+    patterns: [
+      {
+        match: '(\!\!)(.*?)(\!\!)'
+        captures:
+          1: name: 'markup.italic.gpptool'
+          2:
+            patterns: [
+              {
+                match: '''(?xi)
+                            (open\\sfile|close\\sfile|copy\\sfile|delete\\sfile|make\\sdir)
+                            (\\s*\\=\\s*)
+                            (.+)
+                '''
+                captures:
+                  1: name: 'markup.italic.gpptool'
+                  2: name: 'keyword.operator.gpptool'
+                  3: name: 'markup.italic.gpptool'
+              }
+            ]
+          3: name: 'markup.italic.gpptool'
+        # name: 'meta.file-commands.gpptool'
+      }
+    ]
+
+
+  print_gcode:
+    patterns: [
+      {
+        name: 'meta.gcode-generation.gpptool'
+        match: '(?i)(\\{)\\s*(\\b(?:nb|nl)\\b)?(.*?)(\\})'
+        captures:
+          1: name: 'keyword.other.special-method.gpptool'
+          2: name: 'entity.other.attribute-name.gpptool'
+          4: name: 'keyword.other.special-method.gpptool'
+          3:
+            patterns: [
+              { include: '#display_affix_format' }
+              { include: '#array' }
+              { include: '#brackets' }
+              { include: '#gppl_internal_functions' }
+              { include: '#strings' }
+              { include: '#variables' }
+              { include: '#variable_usr' }
+              { include: '#commaSign' }
+            ]
+      }
+    ]
+
+  brackets:
+    patterns: [
+      {
+        begin: '\\('
+        beginCaptures:
+          0: name: 'punctuation.definition.brackets.begin.gpptool'
+        end: '\\)'
+        endCaptures:
+          0: name: 'punctuation.definition.brackets.end.gpptool'
+        patterns:[
+          { include: '#standard_relational_operators' }
+          { include: '#basic_logical_operators' }
+          { include: '#gppl_internal_functions' }
+          { include: '#numbers' }
+          { include: '#math_operators' }
+          { include: '#variables' }
+          { include: '#variable_usr' }
+          { include: '#brackets' }
+        ]
+      }
+    ]
+
+
+
+  variables:
+    patterns: [
+      { include: '#comments' }
+      { include: '#variable_bulitin' }
+      { include: '#job_type' }
+      { include: '#special_variables' }
+      { include: '#parameter_for_variable' }
+      { include: '#declare_variable' }
+      # { include: '#array' }
+      # { include: '#variable_usr' }
+    ]
+
+  escape_character:
+    patterns: [
+      {
+        match: '(?i)\\\\(?:\\\\|a|b|c|e|f|n|r|t|v|x\\d{2})'
+        name: 'constant.character.escape.gpptool'
+      }
+    ]
+
+  special_variables:
+    patterns: [
+      {
+        match: '(?i)\\b(?:PI|TRUE|FALSE|inch_system)\\b'
+        name: 'support.constant.gpptool'
+      }
+    ]
+
+  job_type:
+    patterns: [
+      {
+        match: '''(?ix)
+          \\b
+            (?:pocket|profile|chamfer_3d|thread_3d|drill|slot|trans_surf|3-d\\smodel|thread|3-d\\sdrill
+            |3-d\\sengraving|5x_advanced|5x_face|5x_engraving|5x_port_mach|5x_swarf|5x_turbine
+            |5x_2_5_axis|5x_3axis|5x_4axis|hsm_const_step|hsm_waterline|hsm_area_clearance
+            |hsm_raster_clearance|hsm_horiz_area|hsm_raster|hsm_boundary|hsm_pencil|hsm_par_pencil
+            |hsm_rest_mach|hsm_rest_roughing|hsm_corner_offset|pocket_3D|profile_3D|tslot
+            |hsm_combine_const_z_horizontal|hsm_combine_const_z_linear|hsm_combine_const_z_const_step
+            |hsm_combine_const_z_corner_offset|tool_box|mw_swarf_4x|mw_converted_3x|mw_converted_4x
+            |mw_impeler_rough_5x|mw_impeller_floor_tc_5x|mw_impeller_floor_no_tc_5x|mw_impeller_blade_5x
+            |mw_drill_5x|mw_drill_4x|mw_cavity_with_gouge_5x|face_milling|hsm_helical|hsm_offset_cutting
+            |hsm_mixed_const_z_const_step|drill_hr|spiral_pocket|spiral_msc|hss_const_z
+            |hss_linear|hss_perp_to_curve|hss_morph_between_curves|hss_parallel_to_curve
+            |hss_morph_between_surf|hss_projection|hss_parallel_to_surf|4x_const_z|4x_linear
+            |4x_perp_to_curve|4x_morph_between_curves|4x_parallel_to_curve|4x_morph_between_surf
+            |4x_projection|4x_parallel_to_surf|4x_hatch|5x_const_z|5x_linear|5x_perp_to_curve
+            |5x_morph_between_curves|5x_parallel_to_curve|5x_morph_between_surf|5x_projection
+            |5x_parallel_to_surf|5x_hatch|NaviRoboDeburring|4x_parallel_cuts|5x_parallel_cuts
+            |4x_engraving|4x_cavity|4x_electrode|4x_turbine|machine\\scontrol\\soperation|inter_oper_movement
+            |probe\\soperation|3x_chamfer|4x_chamfer|5x_chamfer|3x_contour|4x_contour|5x_contour
+            |3x_const_step|4x_const_step|5x_const_step|5x_swarfing|5x_multi_blade_rough
+            |5x_multi_blade_blade_finish|5x_multi_blade_hub_finish|5x_multi_blade_fillet_finish
+            |5x_port_rough|5x_port_rest_rough|5x_port_finish_along|5x_port_finish_around
+            |5x_rough|hsm_hm_rib|hsm_hm_const_z|fixture_setup|hsm_hm_rough\\s*turn|t_imachining
+            |drill|thread|groove|groove\\scut|turn\\sface|sim_turn|turn_manual|4x\\ssim.\\sturning
+            |balanced_rough|4_axis|constant_angle|macro|variable_angle)\\b
+        '''
+        name: 'entity.name.type.gpptool'
+	    }
+    ]
+
+  declare_variable:
+    patterns: [
+      {
+        begin: '''(?ix)
+                    (global|local)
+                    \\s+
+                    (logical|string|integer|numeric)
+                    \\s+
+        '''
+        beginCaptures:
+          0: name: 'storage.type.declare.$1.gpptool'
+          # 1: name: 'storage.type.var_range.gpptool'
+          # 2: name: 'storage.type.var_type.gpptool'
+        end: '(?=\\;|\$)'
+        patterns: [
+          # { include: '#comments' }
+          { include: '#array' }
+          { include: '#variable_usr' }
+          { include: '#commaSign' }
+        ]
+      }
+    ]
+
+  variable_usr:
+    patterns: [
+      {
+        match: '([A-Za-z][a-zA-z0-9_]{60,})|([A-Za-z][a-zA-z0-9_]{0,59})'
+        captures:
+          1: name: 'invalid.illegal.variable.gpptool'
+          2: name: 'variable.interpolation.gpptool'
+      }
+    ]
+
+  variable_usr_assignment:
+    patterns: [
+      {
+        match: '''(?mx)
+                  (
+                    \\b[a-zA-Z][a-zA-Z0-9_]*\\b\\s*<<.*?>>
+                    |
+                    \\b[a-zA-Z][a-zA-Z0-9_]*\\b
+                  )
+                  \\s*
+                  (=)
+                  \\s*
+                  (.*)
+                  (?=\\;|\$)
+        '''
+        captures:
+          1:
+            patterns: [
+              { include: '#array' }
+              { include: '#variables' }
+              { include: '#variable_usr' }
+            ]
+          2: name: 'punctuation.definition.equals.gpptool'
+          3:
+            patterns: [
+              # { include: '#comments' }
+              { include: '#array' }
+              { include: '#numbers' }
+              { include: '#brackets' }
+              { include: '#gppl_internal_functions' }
+              { include: '#strings' }
+              { include: '#variables' }
+              { include: '#variable_usr' }
+            ]
+      }
+    ]
+
+  variable_bulitin:
+    patterns: [
+      {
+        match: '''(?xi)
+                    \\b
+                    (gcode|mcode|rotated|mirrored|prev_command|current_command|next_command
+                    |first_user_proc|remove_blanks|gcode_space|gcode_f|mcode_f|numeric_def_f
+                    |integer_def_f|[xyzijka]pos_f|xhpos_f|yhpos_f|zhpos_f|xmpos_f
+                    |ympos_f|zmpos_f|xlpos_f|ylpos_f|zlpos_f|xopos_f|yopos_f|zopos_f|xtpos_f
+                    |ytpos_f|ztpos_f|xtopos_f|ytopos_f|ztopos_f|feed_f|end_block_text
+                    |blknum_letter|blknum_exist|blknum_gen|blknum_f|blknum_delta
+                    |blknum|blknum_max|skipline|num_user_procs)
+                    \\b
+        '''
+        name: 'support.variable.$1.gpptool'
+      }
+      {
+        match: '''(?ix)
+                    \\b
+                    (absolute|anext|angle|angle_4x_around_x|angle_4x_around_x_dir|angle_4x_around_y|angle_4x_around_y_dir
+                    |apos|appearance_of_tool|approach_type|arbor_diameter|arc_direction|arc_direction_h|arc_feed|arc_odirection
+                    |arc_plane|arc_plane_h|arc_plane_m|arc_size|array|axes_order|bbpos|before|best_cpos|bnext|bound_x_external
+                    |bound_x_internal|bound_z_max|bound_z_min|bpos|build_revision|b_value|call_prms|call_prms_num|cartesian_mode
+                    |center_pos|change_tool_follows|ChannelID|ChannelName|check_z_minus|chng_cond|chng_cond_num|clamp_external
+                    |clearance_plane|clear_offset|clear_type|cnext|const_angle|corner_radius|cpos|cutting_diameter|cutting_tool_length
+                    |cycle_plane_m|dapos|dbpos|dc|d_drill_type|delay_period|depth|depth_type|dev_angle_x|dev_angle_x_dir
+                    |dev_angle_y|dev_angle_y_dir|dev_angle_z|dev_angle_z_dir|dir4x|dir5a|dir5b|direction_4x|distance_from_home1
+                    |d_offset|down_step|down_step_type|drill_clearance_z|drill_cycle_name|drill_depth|drill_lower_z
+                    |drill_type|drill_upper_z|drive_unit_gear_ID|e_group_changed|e_group_name|end_angle|end_angle_h
+                    |end_angle_m|end_line|end_pnt|euler_angle_dev_z|euler_angle_x|euler_angle_z|euler_next_dev_z
+                    |euler_next_x|euler_next_z|feed|feed_finish_teeth|feed_link|feed_link_teeth|feed_rate|feed_status
+                    |feed_teeth|feed_type|feed_unit|feed_z_teeth|finish|finish_feed|finish_spin|first_axes|first_axis_angle
+                    |first_drill|first_plane_angle|first_pos_x|first_pos_z|first_proc_number|first_tool|fixture_name
+                    |fixturerotdir|fixture_x_max|fixture_x_min|fixture_y_max|fixture_y_min|fixture_z_max|fixture_z_min
+                    |floor_offset|fourth_axis_first|fourth_axis_last|fourth_axis_used|full_g_file_name|gear_max_spin
+                    |gear_min_spin|geom_name|g_file_name|groove_type_cut_off|group_holder_name|group_tool_name|hlength
+                    |h_offset|holder_description|holder_name|home_changed|home_id|home_number|home_user_name|inch_system
+                    |index_job|index_split_file|insert_face|inverse_feed|island_offset|is_line|Job_clearance_plane|job_d_offset
+                    |job_h_offset|job_lower_plane|job_machine_type|job_name|job_plane|job_time|job_type|Job_upper_plane
+                    |label|last_last_tool|last_line|last_pos_x|last_pos_z|last_proc_number|last_tool|lead|lead_unit
+                    |loop_count|loop_level|mac_comment|machine_b_value|machine_offset_x|machine_offset_y|machine_offset_z
+                    |machine_plane|mac_number|mac_shift_a|mac_shift_b|mac_shift_x|mac_shift_y|mac_shift_z|MCO_New_LIne
+                    |message\\d{0,2}|mill_pivot_length|min_diameter|mirror_type|mirror_used|Module_5XDrill|Module_BS|Module_Con5X
+                    |Module_MI4|Module_MI5|Module_MS4|Module_MS5X_3|Module_MS5X_4|Module_MS5X_5|Module_MS5X_MSim|Module_Multi_Turret
+                    |Module_T|Module_XYZC|Module_XYZCB|mounting_direction_x|mounting_direction_y|mounting_direction_z
+                    |move_extr_axis_L1|move_extr_axis_L2|move_extr_axis_L3|move_extr_axis_R1|move_extr_axis_R2|move_extr_axis_R3
+                    |msc_finish|msc_finish_down_step|msc_rough|msc_rough_down_step|msc_semi_finish|msc_semi_finish_down_step
+                    |msg_mill_tool1|msg_mill_tool2|msg_mill_tool3|msg_mill_tool4|msg_mill_tool5|msg_turn_tool1|msg_turn_tool2
+                    |msg_turn_tool3|msg_turn_tool4|msg_turn_tool5|msr_len|msr_rad|multi_tool_pos|name_extr_axis_L1|name_extr_axis_L2
+                    |name_extr_axis_L3|name_extr_axis_R1|name_extr_axis_R2|name_extr_axis_R3|need_change_plane|next_const_angle
+                    |next_direction|next_job5x|next_job_hsm|next_job_machine_type|next_job_machine_type_on_turret|next_job_submachine_ID_on_turret
+                    |next_job_tool_id_number|next_job_tool_id_string|next_job_tool_number|next_job_tool_position|next_job_tool_tag
+                    |next_job_type|next_job_type_name|next_job_type_name_on_turret|next_job_type_on_turret|next_next_tool_number
+                    |next_rot_axis_type|next_submachine_ID|next_tool_id_number|next_tool_id_number_on_turret|next_tool_id_string
+                    |next_tool_id_string_on_turret|next_tool_in_turret|next_tool_machine_type|next_tool_number|normal_to_plane_x
+                    |normal_to_plane_y|normal_to_plane_z|nose_point|number_occur_of_tool|number_of_jobs_used_tool|number_of_offsets
+                    |num_down_steps|num_homes|num_oper_in_appear|num_points|offset_number|offset_radius|opposite_dev_angle_x
+                    |opposite_dev_angle_y|opposite_dev_angle_z|opposite_euler_angle_dev_z|opposite_euler_angle_x|opposite_euler_angle_z
+                    |opposite_first_axis_angle|opposite_rotate_angle_x|opposite_rotate_angle_y|opposite_rotate_angle_z
+                    |opposite_second_axis_angle|opposite_shift_in_tilted_plane_x|opposite_shift_in_tilted_plane_y|opposite_shift_in_tilted_plane_z
+                    |opposite_shift_pos_m_x|opposite_shift_pos_m_y|opposite_shift_pos_m_z|opposite_shift_pos_x|opposite_shift_pos_y
+                    |opposite_shift_pos_z|opposite_shift_x_after_rot|opposite_shift_y_after_rot|opposite_shift_z_after_rot
+                    |opposite_x_angle_const_y|opposite_x_angle_const_z|opposite_y_angle_const_x|opposite_y_angle_const_z
+                    |opposite_z_angle_const_x|opposite_z_angle_const_y|original_feed|original_job_name|other_angle_pair
+                    |parm1|parm2|parm3|part_full_name|part_home_number|part_model_name|part_name|path_part|pocket_app_type
+                    |polar_mode|position|prev_cpos|prev_home_id|prev_job_mac_type|proc_count|process_type|profile_app_type
+                    |program_number|program_plane|radial_diameter|radial_direction|radial_start_tool_level|radius|rear_start_tool_level
+                    |ref_point_init|release|release_dist|release_distance|release_type|retract_distance|retreat_distance
+                    |rotate_angle_x|rotate_angle_x_dir|rotate_angle_y|rotate_angle_y_dir|rotate_angle_z|rotate_angle_z_dir
+                    |rotate_cancel|rotate_next_x|rotate_next_y|rotate_next_z|rotate_used|rot_axis_coord|rot_axis_type
+                    |rough_offset|rough_offset_dist|rough_offset_x|rough_offset_z|RTP_before_MCO|safety|second_axis_angle
+                    |second_offset|second_plane_angle|semi_finish|semi_finish_floor_offset|semi_finish_surface_offset
+                    |semi_finish_wall_offset|semi_offset_x|semi_offset_z|setup_angle|setup_fixture_rotation|setup_shift_from_MCS_x
+                    |setup_shift_from_MCS_y|setup_shift_from_MCS_z|shift_from_MCS_first_axis|shift_from_MCS_second_axis
+                    |shift_from_MCS_x|shift_from_MCS_y|shift_from_MCS_z|shift_in_tilted_plane_x|shift_in_tilted_plane_y
+                    |shift_in_tilted_plane_z|shift_Mac_m_x|shift_Mac_m_y|shift_Mac_m_z|shift_pos_m_x|shift_pos_m_y|shift_pos_m_z
+                    |shift_pos_x|shift_pos_y|shift_pos_z|shift_x|shift_x_after_rot|shift_y|shift_y_after_rot|shift_z
+                    |shift_z_after_rot|shoulder_length|side|side_step|single_piece|Slave_Drive_Unit|spin|spin_direction
+                    |spindle|spindle_direction_x|spindle_direction_y|spindle_direction_z|spindle_orientation|spindle_position
+                    |spindles_sync_slave_device|spin_finish_teeth|spin_limit|spin_min_limit|spin_rate|spin_teeth|spin_unit
+                    |split_name|start_angle|start_angle_h|start_angle_m|start_line|start_pnt|start_with_part_in_sub
+                    |station_angle_in_turret|station_name_in_turret|stock_name|stock_type|stock_x|stock_x_minus|stock_x_plus
+                    |stock_y|stock_y_minus|stock_y_plus|stock_z|stock_z_minus|stock_z_plus|submachine_ID|supported_CAM_Modules
+                    |surface_offset|Sync_Data_Name|sync_spindle|target_configuration_name|target_name|target_x|target_x_minus
+                    |target_x_plus|target_y|target_y_minus|target_y_plus|target_z|target_z_minus|target_z_plus|third_plane_angle
+                    |tmatrix_I_1|tmatrix_I_16|tmatrix_I_2|tmatrix_I_3|tmatrix_inside_job|tolerance_len|tolerance_rad
+                    |tool_A|tool_ALFA|tool_angle|tool_B|Tool_B|tool_BETA|tool_C|tool_change_type|tool_composite|tool_composite_insert_name
+                    |tool_composite_M|tool_composite_N|tool_D|tool_D1|tool_D2|tool_description|tool_diameter|tool_direction
+                    |tool_drill_lead|tool_E|tool_F|tool_feed|tool_feed_finish|tool_feed_z|tool_first_direction|tool_first_feed
+                    |tool_first_feed_unit|tool_first_spin|tool_first_spin_unit|tool_G|tool_H|tool_head_orientation|Tool_holder_mount_x
+                    |Tool_holder_mount_y|Tool_holder_mount_z|tool_id_number|tool_id_string|tool_K|tool_length|tool_material
+                    |tool_message|tool_mode|tool_name|tool_number|tool_offset|tool_offset_long|tool_offset_number|tool_origin
+                    |tool_path_type|tool_position|tool_position_in_turret|tool_Radius_alfa|tool_RADIUS_ALFA|tool_Radius_beta
+                    |tool_RADIUS_BETA|tool_reversed|tool_rough|tool_side|tool_spin|tool_spin_finish|tool_start_plane
+                    |tool_teeth_number|tool_thread_teeth_number|tool_tip_radius|tool_tip_x|tool_tip_y|tool_tip_z|tool_type
+                    |tool_used_in_back_spindle|tool_used_in_main_spindle|tool_user_type|tool_work_time|tool_z_level
+                    |total_tool_length|turning_mode|turning_plane_rotation|TurretName|type|u_angle|upos|upos_inc|upper_plane
+                    |use_cycle|used_as_compensated|used_in_auto|used_in_other|user_account|user_tool_offset|uv_abs|v_angle
+                    |VMID_file|vpos|vpos_inc|wall_offset|wire_D|wire_inserted|wire_P|wire_S|wire_T|work_material|work_type
+                    |work_upper_plane|x_angle_const_y|x_angle_const_y_dir|x_angle_const_z|x_angle_const_z_dir|xcenter
+                    |xcenter_rel|xhcenter|xhcenter_rel|xhnext|xhnext_start_tool_level|xhnext_tool_z_level|xhome|xhpos
+                    |xhstart|xlcenter|xlcenter_rel|xlnext|xlnext_start_tool_level|xlnext_tool_z_level|xlpos|xlstart
+                    |xmcenter|xmcenter_rel|xmnext|xmnext_start_tool_level|xmnext_tool_z_level|xmpos|xmstart|xmtool|xnext
+                    |xnext_start_tool_level|xnext_tool_z_level|xocenter|xocenter_rel|xonext|xonext_start_tool_level
+                    |xopos|xostart|xpos|xpos_normal|xrcenter|xrnext|xrnext_start_tool_level|xrpos|xrstart|xrtcenter
+                    |xrtnext|xrtnext_start_tool_level|xrtool|xrtpos|xrtstart|xstart|x_surface_normal|x_surface_point
+                    |xtcenter|xtcenter_rel|xtnext|xtnext_start_tool_level|xtnext_tool_z_level|xtocenter|xtonext|xtonext_start_tool_level
+                    |xtonext_tool_z_level|xtool|xtopos|xtostart|xtpos|xtstart|xupos|x_vector_x|x_vector_y|x_vector_z
+                    |x_vetor_y|xwnext|xy_abs|y_angle_const_x|y_angle_const_x_dir|y_angle_const_z|y_angle_const_z_dir
+                    |ycenter|ycenter_rel|yhcenter|yhcenter_rel|yhnext|yhnext_start_tool_level|yhnext_tool_z_level|yhome
+                    |yhpos|yhstart|ylcenter|ylcenter_rel|ylnext|ylnext_start_tool_level|ylnext_tool_z_level|ylpos|ylstart
+                    |ymcenter|ymcenter_rel|ymnext|ymnext_start_tool_level|ymnext_tool_z_level|ympos|ymstart|ymtool|ynext
+                    |ynext_start_tool_level|ynext_tool_z_level|yocenter|yocenter_rel|yonext|yonext_start_tool_level
+                    |yopos|yostart|ypos|ypos_normal|yrcenter|yrnext|yrnext_start_tool_level|yrpos|yrstart|yrtcenter
+                    |yrtnext|yrtnext_start_tool_level|yrtool|yrtpos|yrtstart|ystart|y_surface_normal|y_surface_point
+                    |ytcenter|ytcenter_rel|ytnext|ytnext_start_tool_level|ytnext_tool_z_level|ytocenter|ytonext|ytonext_start_tool_level
+                    |ytonext_tool_z_level|ytool|ytopos|ytostart|ytpos|ytstart|yupos|y_vector_x|y_vector_y|y_vector_z
+                    |ywnext|z_angle_const_x|z_angle_const_x_dir|z_angle_const_y|z_angle_const_y_dir|zcenter|zcenter_rel|zero_plane
+                    |z_feed|zhcenter|zhcenter_rel|zhnext|zhnext_start_tool_level|zhnext_tool_z_level|zhome|zhpos|zhstart
+                    |zlcenter|zlcenter_rel|zlnext|zlnext_start_tool_level|zlnext_tool_z_level|zlpos|zlstart|zmcenter
+                    |zmcenter_rel|zmnext|zmnext_start_tool_level|zmnext_tool_z_level|zmpos|zmstart|zmtool|znext|znext_start_tool_level
+                    |znext_tool_z_level|zocenter|zocenter_rel|zonext|zonext_start_tool_level|zopos|zostart|zpos|zpos_normal
+                    |zrcenter|zrnext|zrnext_start_tool_level|zrpos|zrstart|zrtcenter|zrtnext|zrtnext_start_tool_level
+                    |zrtool|zrtpos|zrtstart|zstart|z_surface_normal|z_surface_point|ztcenter|ztcenter_rel|ztnext|ztnext_start_tool_level
+                    |ztnext_tool_z_level|ztocenter|ztonext|ztonext_start_tool_level|ztonext_tool_z_level|ztool|ztopos
+                    |ztostart|ztpos|ztstart|zupos|zwnext|zyx_angle_x|zyx_angle_y|zyx_angle_z
+                    |is_chamfer
+                    )\\b
+        '''
+        name: 'support.variable.gpptool'
+      }
+    ]
+
+  parameter_for_variable:
+    patterns: [
+      {
+        match: '''(?ix)
+                    \\b
+                      (?:3-d\\sdrill|3-d\\sengraving|3-d\\smodel|3x_chamfer|3x_const_step|3x_contour|3x_wire_frame|4_axis
+                      |4x_cavity|4x_chamfer|4x_const_step|4x_const_z|4x_contour|4x_electrode|4x_engraving|4x_hatch|4x_linear
+                      |4x_morph_between_curves|4x_morph_between_surf|4x_parallel_cuts|4x_parallel_to_curve|4x_parallel_to_surf
+                      |4x_perp_to_curve|4x_projection|4x\\ssim.\\sturning|4x_turbine|4x_wire_frame|5x_2_5_axis|5x_3axis
+                      |5x_4axis|5x_advanced|5x_chamfer|5x_const_step|5x_const_z|5x_contour|5x_engraving|5x_face|5x_hatch
+                      |5x_linear|5x_morph_between_curves|5x_morph_between_surf|5x_multi_blade_blade_finish|5x_multi_blade_fillet_finish
+                      |5x_multi_blade_hub_finish|5x_multi_blade_rough|5x_parallel_cuts|5x_parallel_to_curve|5x_parallel_to_surf
+                      |5x_perp_to_curve|5x_port_finish_along|5x_port_finish_around|5x_port_mach|5x_port_prph|5x_port_rest_rough
+                      |5x_port_rough|5x_projection|5x_rough|5x_swarf|5x_swarfing|5x_turbine|adv_contour_roughing|ang_groove
+                      |axes_order_x|axes_order_xy|axes_order_x_y|axes_order_xyz|axes_order_x_yz|axes_order_x_y_z|axes_order_xy_z
+                      |axes_order_xz|axes_order_x_z|axes_order_x_z_y|axes_order_y|axes_order_y_x|axes_order_y_x_z|axes_order_yz
+                      |axes_order_y_z|axes_order_y_zx|axes_order_y_z_x|axes_order_yz_x|axes_order_z|axes_order_z_x|axes_order_z_xy
+                      |axes_order_z_x_y|axes_order_zx_y|axes_order_z_y|axes_order_z_y_x|AXIS4_FACE|AXIS4_NONE|AXIS4_RADIAL
+                      |AXIS4_TOP|BACK|balanced_rough|ball_nose|bore|Box|broaching|bullnose|CCW|center_drill|chamfer_3d
+                      |chamfer_drill|COMP_LEFT|COMP_OFF|COMP_RIGHT|constant_angle|COPY|cut|CW|CW|Cylinder|D_Boring|D_Drilling
+                      |D_F_Boring|D_F_Drill|diagonal_approach|dove_mill|D_Peck|D_R_Boring|drill|drill_hr|drill_shaped
+                      |DS_LIST|DS_VALUE|D_Tapping|end_approach|end_finish|end_mill|end_mill_shaped|end_retreat|engraving_mill
+                      |EXTERNAL|FACE|face_mill|face_milling|feed_link|feed_rapid|feed_rate|finish_feed|fixture_setup|FRONT
+                      |groove|groove_prof|groove_rough|groove\\scut|helical_approach|hsm_area_clearance|hsm_boundary|hsm_combine_const_z_const_step
+                      |hsm_combine_const_z_corner_offset|hsm_combine_const_z_horizontal|hsm_combine_const_z_linear|hsm_const_step
+                      |hsm_corner_offset|hsm_helical|hsm_hm_const_z|hsm_hm_rib|hsm_hm_rough|hsm_horiz_area|hsm_mixed_const_z_const_step
+                      |hsm_morphed|hsm_offset_cutting|hsm_par_pencil|hsm_pencil|hsm_radial|hsm_raster|hsm_raster_clearance
+                      |hsm_rest_mach|hsm_rest_roughing|hsm_spiral|hsm_waterline|hss_const_z|hss_hatch|hss_linear|hss_morph_between_curves
+                      |hss_morph_between_surf|hss_parallel_to_curve|hss_parallel_to_surf|hss_perp_to_curve|hss_projection
+                      |INTERNAL|inter_oper_movement|iscar_plh|linear_approach|lollipop_mill|LONG|machine\\scontrol\\soperation
+                      |macro|milling|MIRROR_OFF|MIRROR_X|MIRROR_XY|MIRROR_Y|MM|MULTIPLE|multy-drill|mw_cavity_with_gouge_5x
+                      |mw_converted_3x|mw_converted_4x|mw_drill_4x|mw_drill_5x|mw_impeler_rough_5x|mw_impeller_blade_5x
+                      |mw_impeller_floor_no_tc_5x|mw_impeller_floor_tc_5x|mw_swarf_4x|NaviRoboDeburring|None|ONCE|PITCH_INCH
+                      |pocket|pocket_3D|probe\\soperation|profile|PROFILE|profile_3D|ramp_down_feed|ramp_up_feed|reamer_mill
+                      |ROUGH|rough_mill_shaped|saw|sim_turn|slot|slot_mill|spiral_msc|spiral_pocket|spot_drill|start_approach
+                      |start_finish|start_retreat|taper_ball_nose|taper_mill|tap_mill|thread|thread_3d|thread_mill|thread_taper_mill
+                      |t_imachining|tool_box|tool_probe|tool_side_left|tool_side_middle|tool_side_right|trans_surf|tslot
+                      |turn|turning|turn_manual|turn\\sface|variable_angle|vertical_approch|wire_cut|XY|XY|YZ|YZ|z_feed
+                      |z_feed_safety|ZX
+                      |st_mm_min|mm_tooth|mm_min|mm_rev
+                      )\\b
+        '''
+        name: 'support.constant.gpptool'
+      }
+  ]

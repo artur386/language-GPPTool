@@ -1,0 +1,374 @@
+'.source.gpptool':
+
+
+  'trace':
+    'prefix': 'trace'
+    'body': 'trace ${1:\'${2:all}\'}\:${3:5}'
+    'leftLabelHTML': '<span class="aab-left-label">function</span>'
+    'rightLabelHTML': '<span class="aab-right-label">trace</span>'
+    'description': """
+                   function
+    """
+
+
+  'if':
+    'prefix': 'if'
+    'body': """
+            if (${1:  }) then
+              ${2:;body}
+            endif
+    """
+    'leftLabelHTML': '<span class="aab-left-label">Conditional Statements</span>'
+    'rightLabelHTML': '<span style="font-size:110%;color:#FFAA1D">if
+                       <span style="font-size:120%;color:#1DAAFF"><i> #statement body </i></span>endif</span>'
+    'description': """
+                   Format:
+                   if <cond 1> then
+                     statements 1
+                   endif
+
+                   Description:
+                   The condition (<cond1>) is evaluated and converted into logical type. If the result is TRUE (1) only the statements in the 'statements 1' group are executed. Otherwise, <cond 2> (if exists) is evaluated, and if it is TRUE only the statements in the 'statements 2' group are executed. If none of the conditions is evaluated as TRUE, the statements in the 'statements 3' group (if exists) are executed.
+                  if direction eq CCW then  ;results in either TRUE
+                    gcode = 3 ;execute ONLY if TRUE
+                  endif
+    """
+
+  'if-else':
+    'prefix': 'ife'
+    'body': """
+            if (${1:  }) then
+              ${2:;body true}
+            else
+              ${3:;body false}
+            endif
+    """
+    'leftLabelHTML': '<span style="font-size:110%; color:#FF2052">Conditional Statements</span>'
+    'rightLabelHTML': '<span style="font-size:110%;color:#FFAA1D">if</wbr>
+                       <span style="font-size:120%;color:#1DAAFF"><i> ;body true</wbr></i></span>
+                       else</wbr>
+                       <span style="font-size:120%;color:#1DAAFF"><i> ;body false </wbr></i></span>
+                       endif
+                       </span>'
+    'description': """
+                   Format:
+                   if <cond 1> then
+                     statements 1
+                   endif
+
+                   Description:
+                   The condition (<cond1>) is evaluated and converted into logical type. If the result is TRUE (1) only the statements in the 'statements 1' group are executed. Otherwise, <cond 2> (if exists) is evaluated, and if it is TRUE only the statements in the 'statements 2' group are executed. If none of the conditions is evaluated as TRUE, the statements in the 'statements 3' group (if exists) are executed.
+                  if direction eq CCW then  ;results in either TRUE
+                    gcode = 3 ;execute ONLY if TRUE
+                  endif
+    """
+
+  'display_format':
+    'prefix': 'format'
+    'body': '${1:<${2}>}5.3(p)${3:<${4}>}'
+    'leftLabelHTML': '<span style="font-size:110%; color:#FF2052">string</span>'
+    'rightLabelHTML': '<span style="font-size:110%;color:#FFAA1D">\<prefix\>\<sign\>\<leading\-zeroes\>\<integer\>\.\<fraction\>\<trailing\-zeroes\>\<options\>\<postfix\></span>'
+    'description': """
+                   description
+    """
+
+
+
+  'Generate Block':
+    'prefix': 'nb'
+    'body': '{nb, ${1:new_block}}'
+    'leftLabelHTML': '<span style="font-size:110%; color:#FF2052";>Generate Functions</span>'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">{<span style="font-size:120%;color:#1DAAFF"><i>New Block</i></span>}</span>'
+    'description': """
+                   {nb} - This statement generates a new block.
+                   @end_program
+                       {nb,'M30'}
+                   endp
+    """
+
+  'Generate Line':
+    'prefix': 'nl'
+    'body': '{nl, ${1:new_line}}'
+    'leftLabelHTML': '<span style="font-size:110%; color:#FF2052";>Generate Functions</span>'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">{<span style="font-size:120%;color:#1DAAFF"><i>New Line</i></span>}</span>'
+    'description': """
+                   {nl} - This statement generates a new block.
+                   @end_program
+                       {nl,'M30'}
+                   endp
+    """
+
+
+  'dup':
+    'prefix': 'dup'
+    'body': 'dup (${1:string}, ${2:count})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">dup (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>count</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - the string expression to be duplicated.
+                   count - any non-negative numeric expression.
+
+                   Description:
+                   This function returns a string value, consisting of the string 'string' duplicated 'count' times.
+                   dup ('abc', 3) ==> 'abcabcabc'
+                   dup (date, 2) ==> '26-Nov-201326-Nov-2013'
+    """
+
+  'instr':
+    'prefix': 'instr'
+    'body': 'instr (${1:str}, ${2:sub_str}${3:, [val]})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">instr (<span style="font-size:120%;color:#1DAAFF"><i>str</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>sub_str</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>[val]</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   str-The string expression to be searched in.
+                   sub_str-The string expression to be searched for.
+                   val-(optional). The start column to begin the search. The default value is 1.
+
+                   Description:
+                   This function searches for the appearance of the sub_str in str from the Val column and returns its position from the beginning of str. If sub_str was not found, the function returns 0. Note that GPPL does distinguish between lower and upper case letters.
+                   instr('abcd', 'cd')==> 3
+                   instr('abcd', 'x')==> 0
+                   instr('abcd', 'Cd')==> 0 (lower/upper case sensitivity)
+                   instr('abcdabcd', 'cd')==> 3 (the first occurrence is taken)
+                   instr("supercalifragilisticexpialidocious", "li", 12) ==> 15 (not 8)
+    """
+
+  'left':
+    'prefix': 'left'
+    'body': 'left (${1:str}, ${2:num})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">left (<span style="font-size:120%;color:#1DAAFF"><i>str</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>num</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   str - any string expression.
+                   num - any positive numeric expression.
+
+                   Description:
+                   This function returns the sub-string which consists of num left characters of str. If str is too short, all str is returned (see function 'right').
+                   left('abcdef', 4) ==> 'abcd'
+                   left('abcdef', -2)==> error. (meaningless request)
+                   left('xyz', 6) ==> 'xyz' (there are no 6 left characters).
+    """
+
+  'lower':
+    'prefix': 'lower'
+    'body': 'lower (${1:string})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">lower (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression.
+
+                   Description:
+                   This function returns the same string, where all upper case (CAPITAL) letters (A-Z) are replaced by their lower case equivalent (a-z). Note that the original string is left unchanged. If you want to change a certain string into lower case, you have to use an assignment statement (see examples below).
+                   lower('TITLE') ==> 'title'
+                   lower('Title no. 1') ==> 'title no. 1'
+                   line = lower(line) ==> converts string variable 'line' into lower case.
+                   Note that GPP uses now the current user's locale settings, so conversion to lower case of strings that contain diacritics letters will succeed ONLY if the locale supports it. For example: US English , Czech, etc. do support diacritics, while Hebrew does not.
+    """
+
+
+  'replace':
+    'prefix': 'replace'
+    'body': 'replace(${1:str}, ${2:oldstr}, ${3:newstr} ${4:[, k]})'
+    'leftLabel': 'String Function'
+    'leftLabelHTML': '<span style="color:#FF2052";>String Function</span>'
+    'rightLabelHTML': """
+                      <span style="font-size: 110%; color:#FFAA1D">
+                      replace(
+                      <span style="font-size:120%;color:#1DAAFF"><i>str</i></span>,
+                      <span style="font-size:120%;color:#1DAAFF"><i>oldstr</i></span>,
+                      <span style="font-size:120%;color:#1DAAFF"><i>newstr [</i></span>,
+                      <span style="font-size:120%;color:#1DAAFF"><i> k]</i></span>
+                      )
+                      </span>
+    """
+    'description': """
+                   Parameters:
+                   Str-string to search in
+                   Oldstr-string to search for
+                   Newstr-string to replace
+                   K-(optional). how many occurrences of oldstr to replace:
+                   =0: replace all occurrences of oldstr (same if k is omitted)
+                   >0: replace first k occurrences of oldstr
+                   <0: replace last k occurrences of oldstr
+
+                   Description:
+                   This function replace the k appearance of the oldstr in str with newstr and returns the str. If oldstr was not found, the function returns str as the result string. Note that GPPL does distinguish between lower and upper case letters.
+                   Valid:
+                   s = replace("abacad", "a", "x", 0)    ==> s = "xbxcxd" (one to one)
+                   s = replace("abacad", "a", "xy", 0)   ==> s = "xybxycxyd" (one to many)
+                   s = replace("abacad", "a", "", 0)     ==> s = "bcd" (one to null)
+                   s = replace("abacad", "ac", "X", 0)   ==> s = "abXad" (many to one/many)
+                   s = replace("abacad", "x", "y", 0)    ==> s = "abacad" (nop)
+                   s = replace("abacad", "a", "xa", 0)   ==> s = "xabxacxad" (no recursion)
+                   s = replace("", "a", "x", 0)          ==> s = "" (nop)
+                   s = replace("abacad", "", "x", 0)     ==> s = "abacad" (nop, not error)
+                   s = replace("abacad", "A", "x", 0)    ==> s = "abacad" (case sensitive)
+                   s = replace("ab"+"acad", "a", "x", 0) ==> s = "xbxcxd" (expressions allowed)
+                   s = replace("abacad", "a", "x", 2)    ==> s = "xbxcad" (only first 2 occurrences)
+                   s = replace("abacad", "a", "x", -2)   ==> s = "abXcXd" (only last two occurrences)
+                   s = replace("abacad", "a", "x", 8)    ==> s = "xbXcXd" (same as k=0, no error)
+                   Invalid:
+                   s = replace(123, "a", "b", 0)         ==> the first argument should be string
+    """
+
+  'rev':
+    'prefix': 'rev'
+    'body': 'rev (${1:string})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">rev (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression.
+
+                   Description:
+                   This function returns the same string while reversing the order of its characters.
+                   rev('abcd') ==> 'dcba'
+                   rev('123') ==> '321'
+    """
+
+  'right':
+    'prefix': 'right'
+    'body': 'right (${1:str}, ${2:num})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">right (<span style="font-size:120%;color:#1DAAFF"><i>str</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>num</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   str - any string expression.
+                   num - any positive numeric expression.
+
+                   Description:
+                   This function returns the sub-string which consists of the num right characters of str. If str is too short, all str is returned (see function 'left').
+                   right('abcdef', 4) ==> 'cdef'
+                   right('abcdef',-2) ==> error.(meaningless request)
+                   right('xyz', 6) ==> 'xyz' (there are no 6 right characters).
+    """
+
+  'space':
+    'prefix': 'space'
+    'body': 'space (${1:len})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">space (<span style="font-size:120%;color:#1DAAFF"><i>len</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   len - any non-negative numeric expression.
+
+                   Description:
+                   This function returns a string of blanks (spaces) of length len. If len is zero, then a null string is returned. This function is equivalent to 'dup(' ', length)'.
+                   space(5) ==> ' '
+                   space(0) ==> '' (the null string)
+                   space(-3) ==> error
+    """
+
+  'strlen':
+    'prefix': 'strlen'
+    'body': 'strlen (${1:string})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">strlen (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression.
+
+                   Description:
+                   The function returns the length of the string, i.e. the number of characters in the string.
+                   strlen('abcd') ==> 4
+                   strlen('abcd ') ==> 5 (note the blank at the end of the string)
+                   strlen('') ==> 0 (length of null string is zero)
+    """
+
+  'substr':
+    'prefix': 'substr'
+    'body': 'substr (${1:}, ${2:from}, ${3:len})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">substr (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>from</i></span>, <span style="font-size:120%;color:#1DAAFF"><i>len</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression.
+                   from - position from beginning of string where sub-string starts. From must be in the range [1, strlen(string)].
+                   len - length of the sub-string to extract
+
+                   Description:
+                   This function returns the sub-string of length len starting in the string from position from, and with length len. If 'from + len' is greater than strlen(string), the returned sub-string is of length less than len.
+                   substr('abcdefg',5,2) ==> 'ef'
+                   substr('abcdefg',5,4) ==> 'efg' (no more characters)
+                   substr('abcdefg',9,2) ==> error (9 is not legal position)
+    """
+
+  'tonum':
+    'prefix': 'tonum'
+    'body': 'tonum (${1:string})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">tonum (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression, which holds a legal numerical value
+                   (see description below).
+
+                   Description:
+                   This function converts the number represented in the string from string format to a numeric format. Valid number in the string must have the following format:
+                   [spaces] [sign] [digits] [.digits] [E [sign] digits]
+                   spaces - blanks (' ')
+                   sign - none ('+' assumed), '+' or '-'
+                   digits - any sequence of decimal digits (0-9)
+                   .digits - decimal point, followed by any sequence of digits
+                   E - beginning of the exponent part
+                   sign - none '+' or '-'; the exponent sig
+                   digits - exponent value
+                   The reverse operation of 'tonum' is the function 'tostr'. See its description below.
+                   tonum(' 12') ==> 12
+                   tonum('-12.34') ==> -12.34
+                   tonum('12.3e2') ==> 1230
+                   tonum('-12E-1') ==> -1.2
+    """
+
+  'tostr':
+    'prefix': 'tostr'
+    'body': 'tostr (${1:number}${2:[:format]})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">tostr (<span style="font-size:120%;color:#1DAAFF"><i>number </i></span>[:format])</span>'
+    'description': """
+                   Parameters:
+                   number - any numeric expression.
+                   format - format definition (optional)
+
+                   Description:
+                   This function converts the number into string notation according to the format specification 'format'. If 'format' is omitted, the string is converted according to a default Display Format.
+                   tostr(12.345) ==> '12.345'
+                   tostr(12.3456) ==> '12.346' (default format is '5.3').
+                   tostr(12.3456:'4.0') ==> '12.'
+    """
+
+  'trim':
+    'prefix': 'trim'
+    'body': 'trim (${1:string})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">trim (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression.
+
+                   Description:
+                   This function returns the same string as in the string, but removes all its trailing blanks.
+                   trim('abcd') ==> 'abcd' (nothing to trim)
+                   trim('abcd ') ==> 'abcd'
+    """
+
+  'upper':
+    'prefix': 'upper'
+    'body': 'upper (${1:string})'
+    'leftLabel': 'String Function'
+    'rightLabelHTML': '<span style="font-size: 110%; color:#FFAA1D">upper (<span style="font-size:120%;color:#1DAAFF"><i>string</i></span>)</span>'
+    'description': """
+                   Parameters:
+                   string - any string expression.
+
+                   Description:
+                   This function returns the same string, where all the lower case letters (a-z) are replaced by their upper case (CAPITAL) equivalent (A-Z). Note that the original string is left unchanged. If you want to change a certain string into upper case, you have to use an assignment statement (see examples below).
+                   upper('TITLE') ==> 'TITLE'
+                   upper('Title no. 1') ==> 'TITLE NO. 1'
+                   line = upper(line) ==> converts string variable line into upper case.
+                   Note that GPP uses now the current user's locale settings, so convertion to upper case of strings that contain diacritics letters will succeed ONLY if the locale supports it. For example: US English, Czech, etc., do support diacritics, while Hebrew does not.
+    """

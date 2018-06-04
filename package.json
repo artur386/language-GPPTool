@@ -1,0 +1,17 @@
+{
+  "name": "language-gpptool",
+  "version": "0.0.0",
+  "description": "Language highlighting package for gpptool (SolidCAM postprocessor)",
+  "keywords": [
+    "gpp",
+    "gpptool",
+    "postprocessor",
+    "solidcam"
+  ],
+  "repository": "https://github.com/atom/language-gpptool",
+  "author": "Artur Paszek <artur.p386@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.15.0 <2.0.0"
+  }
+}
