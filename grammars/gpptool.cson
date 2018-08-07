@@ -30,9 +30,10 @@ repository:
             patterns: [
               { include: '#loop_if_elseif_head_body'}
             ]
-        end: '(?i)(?<=^|\\s)\\bendif\\b(?=\\;|\$)'
+        end: '(?i)(?<=^|\\s)\\b(endif)\\b(?:\\s*)(?=\\;|\$)'
         endCaptures:
-          0: name: 'keyword.control.gpptool'
+          0: name: 'meta.if-end.gpptool'
+          1: name: 'keyword.control.gpptool'
         name: 'meta.statement.control.gpptool'
         patterns: [
           {
@@ -850,6 +851,12 @@ repository:
 
   loop_if_elseif_head_body:
     patterns: [
+      {
+        match: '(\!)'
+        captures:
+          1: name: 'keyword.control.gpptool'
+          # name: 'meta.basic-logical-operators.gpptool'
+      }
       {
         match: '(?i)\\bthen\\b'
         captures:
