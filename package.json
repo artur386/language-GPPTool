@@ -1,10 +1,11 @@
 {
   "name": "language-gpptool",
   "version": "0.0.0",
-  "description": "Language highlighting package for gpptool (SolidCAM postprocessor)",
+  "description": "Language highlighting package for gpptool (SolidCAM PostProcessor)",
   "keywords": [
     "gpp",
     "gpptool",
+    "highlighting",
     "postprocessor",
     "solidcam"
   ],
